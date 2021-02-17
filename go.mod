@@ -1,5 +1,7 @@
-module github.com/haitham911/icap-client.git
+module github.com/k8-proxy/go-icap-client
 
 go 1.15
 
-require github.com/haitham911/icap-client v0.2.1 // indirect
+require (
+	github.com/k8-proxy/icap-client v0.2.1
+)

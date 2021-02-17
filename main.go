@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	ic "github.com/haitham911/icap-client"
+	ic "github.com/k8-proxy/icap-client"
 )
 
 type ReqParam struct {
