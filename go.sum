@@ -1,0 +1,8 @@
+github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
+github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/egirna/icap v0.0.0-20181108071049-d5ee18bd70bc h1:6IxmRbXV8WXVkcYcTzkU219A3UZeNMX/e6X2sve1wXA=
+github.com/egirna/icap v0.0.0-20181108071049-d5ee18bd70bc/go.mod h1:FdVN2WHg7zOHhJ7kZQdDorfFhIfqZaHttjAzDDvAXHE=
+github.com/haitham911/icap-client v0.1.2 h1:Z0WCvbP3zhoKjxTmvxONzL3giJey59+Bvramk76O/7A=
+github.com/haitham911/icap-client v0.1.2/go.mod h1:0JnnN1BvtEOZfHGY2Jb0jikUEEv5n2dmBNrArl1koNI=
+github.com/haitham911/icap-client v0.2.1 h1:J/j337fibfyYQUfmK3tvCdDpCMVnzunzJ5I2vJnD7yA=
+github.com/haitham911/icap-client v0.2.1/go.mod h1:0JnnN1BvtEOZfHGY2Jb0jikUEEv5n2dmBNrArl1koNI=
