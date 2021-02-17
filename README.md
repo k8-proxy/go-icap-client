@@ -1,24 +1,18 @@
-The Golang equivalent of c-icap-client
+The Golang equivalent of c-icap-client:
 
-**Making Tls InsecureSkipVerify call**
+**Initiating a plain ICAP request**
 
 ```go
 
-  req, err := ic.NewRequestTLS(ic.MethodRESPMOD, "icap://<host>:<port>/<path>", httpReq, httpResp,"tls")
+./go-icap-client icap://<ICAP-Server-IP>:1344/gw_rebuild
 
-  if err != nil {
-    log.Fatal(err)
-  }
+```
 
-  client := &ic.Client{
-		Timeout: 5 * time.Second,
-	}
+**Initiating a Secure ICAP request**
 
-  resp, err := client.Do(req)
+```go
 
-	if err != nil {
-		log.Fatal(err)
-	}
+./go-icap-client icaps://<ICAP-Server-IP>:1345/gw_rebuild
 
 ```
 
