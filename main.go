@@ -68,7 +68,7 @@ func Clienticap(server string) string {
 	httpResp := w.Result()
 
 	icap := "icap://" + host + ":" + port + "/" + service
-	//	req, err := ic.NewRequest(ic.MethodRESPMOD, icap, nil, httpResp)
+	//	req, err := ic.NewRequest(ic.MethodRESPMOD, icap, nil, httpResp) req without tls
 	req, err := ic.NewRequestTLS(ic.MethodRESPMOD, icap, nil, httpResp, "tls")
 
 	if err != nil {
