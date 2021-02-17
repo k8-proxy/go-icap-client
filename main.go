@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
+	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -14,10 +17,27 @@ import (
 	ic "github.com/haitham911/icap-client"
 )
 
+type ReqParam struct {
+	host     string
+	port     string
+	scheme   string
+	services string
+}
+
 func main() {
-	fmt.Println("start")
-	host := "34.242.219.224"
-	result := Clienticap(host)
+	argsWithoutProg := os.Args[1:]
+	if len(argsWithoutProg) == 0 {
+		fmt.Println("error : args not found")
+		os.Exit(1)
+	}
+	newreq, err := parsecmd(argsWithoutProg[0])
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	// "34.242.219.224"
+	result := Clienticap(*newreq)
 	if result != "0" {
 		fmt.Println("not healthy server")
 		os.Exit(1)
@@ -33,13 +53,18 @@ func main() {
 }
 
 //Clienticap icap client req
-func Clienticap(server string) string {
+func Clienticap(newreq ReqParam) string {
 	//ic.SetDebugMode(true)
 	var requestHeader http.Header
-	host := server
+	host := newreq.host
 
-	port := "1345"
-	service := "gw_rebuild"
+	port := newreq.port
+	service := newreq.services //"gw_rebuild"
+	fmt.Println("ICAP Scheme :" + newreq.scheme)
+	fmt.Println("ICAP Server :" + host)
+	fmt.Println("ICAP Port :" + port)
+	fmt.Println("ICAP Service :" + strings.Trim(service, "/"))
+
 	timeout := time.Duration(35000) * time.Millisecond
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
@@ -68,12 +93,18 @@ func Clienticap(server string) string {
 	httpResp := w.Result()
 
 	icap := "icap://" + host + ":" + port + "/" + service
-	//	req, err := ic.NewRequest(ic.MethodRESPMOD, icap, nil, httpResp) req without tls
-	req, err := ic.NewRequestTLS(ic.MethodRESPMOD, icap, nil, httpResp, "tls")
 
-	if err != nil {
-		fmt.Println(err)
-		return "icap error: " + err.Error()
+	var req *ic.Request
+	var reqerr error
+
+	if newreq.scheme == "icaps" {
+		req, reqerr = ic.NewRequestTLS(ic.MethodRESPMOD, icap, nil, httpResp, "tls")
+	} else {
+		req, reqerr = ic.NewRequest(ic.MethodRESPMOD, icap, nil, httpResp)
+	}
+	if reqerr != nil {
+		fmt.Println(reqerr)
+		return "icap error: " + reqerr.Error()
 
 	}
 
@@ -92,10 +123,53 @@ func Clienticap(server string) string {
 
 	fmt.Println(resp.StatusCode)
 	fmt.Println(resp.Status)
+	fmt.Println(resp.Header)
+	fmt.Println(resp.ContentRequest)
+	fmt.Println(resp.ContentResponse)
 
 	p := new(strings.Builder)
 
 	io.Copy(p, resp.ContentResponse.Body)
 
 	return "0"
+}
+
+func parsecmd(pram string) (*ReqParam, error) {
+	// We'll parse this example URL, which includes a
+	// scheme, authentication info, host, port, path,
+	s := pram
+
+	// Parse the URL and ensure there are no errors.
+	u, err := url.Parse(s)
+	if err != nil {
+		panic(err)
+	}
+	host, port, _ := net.SplitHostPort(u.Host)
+	scheme := ""
+	if host == "" {
+		log.Fatal("invalid host")
+	}
+	if port == "" {
+		log.Fatal("invalid port")
+	}
+	if u.Scheme == "" {
+		log.Fatal("invalid scheme")
+	}
+	if u.Scheme == "icaps" || u.Scheme == "icap" {
+		scheme = u.Scheme
+	} else {
+		log.Fatal("invalid scheme")
+	}
+	if u.Path == "" {
+		log.Fatal("invalid services")
+	}
+	req := &ReqParam{
+		host:     host,
+		port:     port,
+		scheme:   scheme,
+		services: strings.Trim(u.Path, "/"),
+	}
+
+	return req, err
+
 }
