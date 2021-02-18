@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/http/httputil"
 	"net/url"
 	"os"
 	"strings"
@@ -60,10 +61,10 @@ func Clienticap(newreq ReqParam) string {
 
 	port := newreq.port
 	service := newreq.services //"gw_rebuild"
-	fmt.Println("ICAP Scheme :" + newreq.scheme)
-	fmt.Println("ICAP Server :" + host)
-	fmt.Println("ICAP Port :" + port)
-	fmt.Println("ICAP Service :" + strings.Trim(service, "/"))
+	fmt.Println("ICAP Scheme: " + newreq.scheme)
+	fmt.Println("ICAP Server: " + host)
+	fmt.Println("ICAP Port: " + port)
+	fmt.Println("ICAP Service: " + strings.Trim(service, "/"))
 
 	timeout := time.Duration(35000) * time.Millisecond
 
@@ -120,17 +121,23 @@ func Clienticap(newreq ReqParam) string {
 		return "resp error: " + err.Error()
 
 	}
-
+	fmt.Println("ICAP Server Response: ")
 	fmt.Println(resp.StatusCode)
 	fmt.Println(resp.Status)
 	fmt.Println(resp.Header)
-	fmt.Println(resp.ContentRequest)
-	fmt.Println(resp.ContentResponse)
+	//fmt.Println(resp.ContentRequest)
 
+	b, err := httputil.DumpResponse(resp.ContentResponse, false)
+	if err != nil {
+		fmt.Println(err)
+		return "error: " + err.Error()
+	}
+	fmt.Println(string(b))
 	p := new(strings.Builder)
-
-	io.Copy(p, resp.ContentResponse.Body)
-
+	if _, err := io.Copy(p, resp.ContentResponse.Body); err != nil {
+		fmt.Println(err)
+		return "resp body error: " + err.Error()
+	}
 	return "0"
 }
 
