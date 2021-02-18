@@ -36,9 +36,12 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-
 	// "34.242.219.224"
-	result := Clienticap(*newreq)
+	fileflg := false
+	if argsWithoutProg[1] == "-f" {
+		fileflg = true
+	}
+	result := Clienticap(*newreq, fileflg)
 	if result != "0" {
 		fmt.Println("not healthy server")
 		os.Exit(1)
@@ -54,7 +57,7 @@ func main() {
 }
 
 //Clienticap icap client req
-func Clienticap(newreq ReqParam) string {
+func Clienticap(newreq ReqParam, fileflg bool) string {
 	//ic.SetDebugMode(true)
 	var requestHeader http.Header
 	host := newreq.host
@@ -122,6 +125,19 @@ func Clienticap(newreq ReqParam) string {
 
 	}
 	fmt.Println("ICAP Server Response: ")
+	if resp == nil {
+		return "Response Error"
+	}
+	if resp.StatusCode != 200 {
+		return "ICAP Server Not Response"
+	}
+	if resp.Status != "OK" {
+		return "ICAP Server Not Response"
+	}
+	if resp.ContentResponse == nil {
+		return "ICAP Server Not Response"
+	}
+
 	fmt.Println(resp.StatusCode)
 	fmt.Println(resp.Status)
 	fmt.Println(resp.Header)
@@ -133,16 +149,29 @@ func Clienticap(newreq ReqParam) string {
 		return "error: " + err.Error()
 	}
 	fmt.Println(string(b))
-	p := new(strings.Builder)
-	if _, err := io.Copy(p, resp.ContentResponse.Body); err != nil {
-		fmt.Println(err)
-		return "resp body error: " + err.Error()
+	if fileflg == false {
+		p := new(strings.Builder)
+		if _, err := io.Copy(p, resp.ContentResponse.Body); err != nil {
+			fmt.Println(err)
+			return "resp body error: " + err.Error()
+		}
+	} else {
+
+		filepath := "./sample.pdf"
+		samplefile, err := os.Create(filepath)
+		if err != nil {
+			fmt.Println(err)
+			return "samplefile error: " + err.Error()
+
+		}
+		defer samplefile.Close()
+		io.Copy(samplefile, resp.ContentResponse.Body)
 	}
 	return "0"
 }
 
 func parsecmd(pram string) (*ReqParam, error) {
-	// We'll parse this example URL, which includes a
+	// We'll parse  URL, which includes a
 	// scheme, authentication info, host, port, path,
 	s := pram
 
