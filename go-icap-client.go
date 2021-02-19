@@ -18,6 +18,7 @@ import (
 	ic "github.com/k8-proxy/icap-client"
 )
 
+//ReqParam icap server param
 type ReqParam struct {
 	host     string
 	port     string
@@ -38,7 +39,9 @@ func main() {
 	}
 	// "34.242.219.224"
 	fileflg := false
-	if argsWithoutProg[1] == "-f" {
+	lastrg := len(argsWithoutProg) - 1
+
+	if argsWithoutProg[lastrg] == "-f" {
 		fileflg = true
 	}
 	result := Clienticap(*newreq, fileflg)
