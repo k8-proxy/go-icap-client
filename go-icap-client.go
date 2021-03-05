@@ -2,8 +2,8 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"net"
@@ -18,6 +18,7 @@ import (
 	ic "github.com/k8-proxy/icap-client"
 )
 
+//ReqParam icap server param
 type ReqParam struct {
 	host     string
 	port     string
@@ -26,19 +27,41 @@ type ReqParam struct {
 }
 
 func main() {
-	argsWithoutProg := os.Args[1:]
-	if len(argsWithoutProg) == 0 {
-		fmt.Println("error : args not found")
+	// i icap server f file send to server r rebuild file c check response and file
+	fileflg := false
+	var i string
+	flag.StringVar(&i, "i", "", "a icap server")
+	var file string
+	flag.StringVar(&file, "f", "", "a file name")
+	var rfile string
+	flag.StringVar(&rfile, "r", "", "a rebuild file name")
+	checkPtr := flag.Bool("c", false, "a bool")
+	flag.Parse()
+	if i == "" {
+		fmt.Println("error : icap server required")
 		os.Exit(1)
 	}
-	newreq, err := parsecmd(argsWithoutProg[0])
+
+	if file == "" {
+		fmt.Println("error :input file required")
+		os.Exit(1)
+	}
+	if *checkPtr == true && rfile == "" {
+		fmt.Println("error : output file required")
+		os.Exit(1)
+	}
+	if rfile == "" {
+		fileflg = false
+	} else {
+		fileflg = true
+	}
+
+	newreq, err := parsecmd(i)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-
-	// "34.242.219.224"
-	result := Clienticap(*newreq)
+	result := Clienticap(*newreq, fileflg, file, rfile, *checkPtr)
 	if result != "0" {
 		fmt.Println("not healthy server")
 		os.Exit(1)
@@ -49,16 +72,16 @@ func main() {
 		os.Exit(0)
 
 	}
+
 	fmt.Println("end")
 
 }
 
 //Clienticap icap client req
-func Clienticap(newreq ReqParam) string {
+func Clienticap(newreq ReqParam, fileflg bool, file string, rfile string, checkfile bool) string {
 	//ic.SetDebugMode(true)
 	var requestHeader http.Header
 	host := newreq.host
-
 	port := newreq.port
 	service := newreq.services //"gw_rebuild"
 	fmt.Println("ICAP Scheme: " + newreq.scheme)
@@ -70,7 +93,7 @@ func Clienticap(newreq ReqParam) string {
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		// grab the generated receipt.pdf file and stream it to browser
-		streamPDFbytes, err := ioutil.ReadFile("test.pdf")
+		streamPDFbytes, err := ioutil.ReadFile(file)
 
 		if err != nil {
 			fmt.Println(err)
@@ -82,8 +105,6 @@ func Clienticap(newreq ReqParam) string {
 		if _, err := b.WriteTo(w); err != nil { // <----- here!
 			fmt.Fprintf(w, "%s", err)
 		}
-
-		w.Write([]byte("PDF Generated"))
 
 	}
 
@@ -122,27 +143,59 @@ func Clienticap(newreq ReqParam) string {
 
 	}
 	fmt.Println("ICAP Server Response: ")
+	if resp == nil {
+		return "Response Error"
+	}
+	if checkfile == true {
+		if resp.Status != "OK" {
+			return "ICAP Server Not Response"
+		}
+		if resp.ContentResponse == nil {
+			return "ICAP Server Not Response"
+		}
+	}
+
 	fmt.Println(resp.StatusCode)
 	fmt.Println(resp.Status)
 	fmt.Println(resp.Header)
 	//fmt.Println(resp.ContentRequest)
-
-	b, err := httputil.DumpResponse(resp.ContentResponse, false)
-	if err != nil {
-		fmt.Println(err)
-		return "error: " + err.Error()
+	if resp.ContentResponse != nil {
+		b, err := httputil.DumpResponse(resp.ContentResponse, false)
+		if err != nil {
+			fmt.Println(err)
+			return "error: " + err.Error()
+		}
+		fmt.Println(string(b))
 	}
-	fmt.Println(string(b))
-	p := new(strings.Builder)
-	if _, err := io.Copy(p, resp.ContentResponse.Body); err != nil {
-		fmt.Println(err)
-		return "resp body error: " + err.Error()
+	var respbody string
+	respbody = string(resp.Body)
+	if resp.Body == nil {
+		fmt.Println("no file in response")
+	}
+
+	if fileflg == true {
+		if checkfile == true {
+			if len(respbody) == 0 {
+				return "file error"
+			}
+		}
+
+		filepath := rfile
+		samplefile, err := os.Create(filepath)
+		if err != nil {
+			fmt.Println(err)
+			return "samplefile error: " + err.Error()
+
+		}
+		defer samplefile.Close()
+
+		samplefile.WriteString(respbody)
 	}
 	return "0"
 }
 
 func parsecmd(pram string) (*ReqParam, error) {
-	// We'll parse this example URL, which includes a
+	// We'll parse  URL, which includes a
 	// scheme, authentication info, host, port, path,
 	s := pram
 
